@@ -3,7 +3,8 @@ import random
 import os
 
 # Берём токен из переменной окружения
-TOKEN = "8262738665:AAEyqjuQQnTxr4cyKff1SxgRaDUlCqjKbPI"
+import os
+TOKEN = os.getenv("TOKEN")
 
 @bot.message_handler(commands=['start'])
 def start(message):
