@@ -3,8 +3,7 @@ import random
 import os
 
 # Берём токен из переменной окружения
-TOKEN = os.getenv("TOKEN")
-bot = telebot.TeleBot(TOKEN)
+TOKEN = "8262738665:AAEyqjuQQnTxr4cyKff1SxgRaDUlCqjKbPI"
 
 @bot.message_handler(commands=['start'])
 def start(message):
