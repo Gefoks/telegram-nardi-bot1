@@ -1,36 +1,57 @@
-import os
 import telebot
 import random
-from flask import Flask
 
-# Токен от @BotFather
-TOKEN = "8262738665:AAEyqjuQQnTxr4cyKff1SxgRaDUlCqjKbPI"
-
-# Создаём объект бота
+TOKEN = '8262738665:AAEyqjuQQnTxr4cyKff1SxgRaDUlCqjKbPI'  # вставь сюда свой токен
 bot = telebot.TeleBot(TOKEN)
 
-# Создаём приложение Flask (необходимо для Render)
-app = Flask(__name__)
+games = {}
+
+def draw_board():
+    top = "🏁 Верхнее поле:\n" + " | ".join([f"{i:2}" for i in range(13, 25)]) + "\n"
+    bottom = "\n🏁 Нижнее поле:\n" + " | ".join([f"{i:2}" for i in range(12, 0, -1)]) + "\n"
+    return top + bottom
+
+def roll_dice():
+    d1, d2 = random.randint(1, 6), random.randint(1, 6)
+    return d1, d2
 
 @bot.message_handler(commands=['start'])
-def start(message):
-    bot.send_message(message.chat.id, "🎲 Добро пожаловать в Нарды!\nКоманда для броска костей: /roll")
+def start_game(message):
+    chat_id = message.chat.id
+    if chat_id not in games:
+        games[chat_id] = {'players': [], 'turn': 0}
+    if message.from_user.username not in games[chat_id]['players']:
+        games[chat_id]['players'].append(message.from_user.username)
+    players = games[chat_id]['players']
+    bot.send_message(chat_id, f"🎯 Добро пожаловать в нарды!\nИгроки: {', '.join(players)}")
+    bot.send_message(chat_id, "Кидай кости — /roll")
 
 @bot.message_handler(commands=['roll'])
-def roll(message):
-    dice1 = random.randint(1, 6)
-    dice2 = random.randint(1, 6)
-    bot.send_message(message.chat.id, f"🎯 Кубики: [{dice1}] и [{dice2}]")
-    if dice1 == dice2:
-        bot.send_message(message.chat.id, "Дубль! Ходишь снова 🔁")
+def handle_roll(message):
+    chat_id = message.chat.id
+    if chat_id not in games or len(games[chat_id]['players']) == 0:
+        bot.send_message(chat_id, "Сначала начни игру /start")
+        return
 
-# Роутинг для Flask (необязательный для бота, но нужен для Render)
-@app.route('/')
-def index():
-    return 'Bot is running!'
+    game = games[chat_id]
+    current_player = game['players'][game['turn'] % len(game['players'])]
+    if message.from_user.username != current_player:
+        bot.send_message(chat_id, f"⏳ Сейчас ход {current_player}")
+        return
 
-# Привязка бота и Flask к порту
-if __name__ == '__main__':
-    # Render будет передавать порт через переменную окружения
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port)
+    d1, d2 = roll_dice()
+    board = draw_board()
+    bot.send_message(chat_id, f"🎲 {current_player} выкинул: {d1} и {d2}\n\n{board}")
+
+    game['turn'] += 1
+
+@bot.message_handler(commands=['reset'])
+def reset_game(message):
+    chat_id = message.chat.id
+    if chat_id in games:
+        del games[chat_id]
+        bot.send_message(chat_id, "♻️ Игра сброшена. Начни заново командой /start.")
+    else:
+        bot.send_message(chat_id, "Нет активной игры.")
+
+bot.polling(non_stop=True)
