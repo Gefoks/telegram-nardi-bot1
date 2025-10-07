@@ -1,13 +1,16 @@
 import telebot
 import random
-
 import os
+
+# Берём токен из переменной окружения
 TOKEN = os.getenv("TOKEN")
 bot = telebot.TeleBot(TOKEN)
 
 @bot.message_handler(commands=['start'])
 def start(message):
-    bot.send_message(message.chat.id, "🎲 Добро пожаловать в Нарды!\nКоманда для броска костей: /roll")
+    bot.send_message(message.chat.id,
+                     "🎲 Добро пожаловать в Нарды!\n"
+                     "Команда для броска кубиков: /roll")
 
 @bot.message_handler(commands=['roll'])
 def roll(message):
